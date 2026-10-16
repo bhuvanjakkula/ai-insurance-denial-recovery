@@ -1,0 +1,4 @@
+clinic_name,claim_number,payer,service_date,denial_code,denied_amount,appeal_deadline,notes
+Demo Medical Group,SYN-1001,Example Health Plan,2026-09-05,CO-50,1750.00,2026-12-20,Synthetic medical necessity example
+Demo Medical Group,SYN-1002,Sample Insurance,2026-09-07,CO-197,830.50,2026-11-30,Synthetic authorization example
+Demo Medical Group,SYN-1003,Example Health Plan,2026-09-09,CO-29,425.00,2026-11-15,Synthetic filing example

@@ -1,0 +1,13 @@
+services:
+  denial-recovery:
+    build: .
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      DEMO_API_KEY: ${DEMO_API_KEY:-change-me-for-local-demo}
+      TENANT_ID: demo-clinic
+      DATABASE_URL: sqlite:////data/denials.db
+    volumes:
+      - denial-data:/data
+volumes:
+  denial-data:
