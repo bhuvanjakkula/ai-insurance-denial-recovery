@@ -1,11 +1,14 @@
-# MedRecover AI â€” Insurance Denial Recovery & Appeals Platform
+# MedRecover AI — Insurance Denial Recovery & Appeals Platform
 
-[![Tests](https://github.com/clinic-rcm/ai-insurance-denial-recovery/actions/workflows/tests.yml/badge.svg)](tests)
+[![GitHub Repo](https://img.shields.io/badge/GitHub-bhuvanjakkula%2Fai--insurance--denial--recovery-181717?logo=github)](https://github.com/bhuvanjakkula/ai-insurance-denial-recovery)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fbhuvanjakkula%2Fai-insurance-denial-recovery&env=DEMO_API_KEY,STRIPE_LINK_STARTER,STRIPE_LINK_PROFESSIONAL,STRIPE_LINK_ENTERPRISE&project-name=ai-insurance-denial-recovery)
 [![Python](https://img.shields.io/badge/Python-3.11+-3776ab.svg)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg)](https://fastapi.tiangolo.com)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 An intelligent clinical revenue cycle management (RCM) platform built for medical clinics to triage denied insurance claims, prioritize workload by financial urgency and deadline, track evidence checklists, draft evidence-grounded appeals, and record human approvals.
+
+GitHub Repository: [https://github.com/bhuvanjakkula/ai-insurance-denial-recovery](https://github.com/bhuvanjakkula/ai-insurance-denial-recovery)
 
 ---
 
@@ -57,6 +60,27 @@ docker compose up --build
 ```
 
 Access the dashboard at [http://localhost:8000](http://localhost:8000).
+
+---
+
+### 3. Deploy to Vercel (Cloud Serverless)
+
+The platform includes a built-in ASGI bridge (`api/index.py`) and deployment spec (`vercel.json`) that runs both the frontend and backend on Vercel with zero routing errors.
+
+#### Option A: 1-Click Deploy
+Click the button below to import the repository directly into your Vercel account:
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fbhuvanjakkula%2Fai-insurance-denial-recovery&env=DEMO_API_KEY,STRIPE_LINK_STARTER,STRIPE_LINK_PROFESSIONAL,STRIPE_LINK_ENTERPRISE&project-name=ai-insurance-denial-recovery)
+
+#### Option B: Import Existing Git Repository
+1. Go to [https://vercel.com/new](https://vercel.com/new).
+2. Select and import **`bhuvanjakkula/ai-insurance-denial-recovery`**.
+3. In **Environment Variables**, add:
+   - `DEMO_API_KEY`: `change-me-for-local-demo` (or your private secret)
+   - `STRIPE_LINK_STARTER`: `https://buy.stripe.com/test_aFa6ozfXtgX3e7LbSvcjS0s`
+   - `STRIPE_LINK_PROFESSIONAL`: `https://buy.stripe.com/test_14AeV56mT229gfT9KncjS0t`
+   - `STRIPE_LINK_ENTERPRISE`: `https://buy.stripe.com/test_aFa00bh1x0Y57JncWzcjS0u`
+4. Click **Deploy**. Vercel will install `requirements.txt`, build the serverless package, and launch your live application with a custom `.vercel.app` domain.
 
 ---
 
