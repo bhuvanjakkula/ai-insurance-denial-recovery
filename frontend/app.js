@@ -112,18 +112,7 @@ async function detectOwner() {
   if (lo) lo.style.display = state.owner ? '' : 'none';
 }
 
-// Authentication
-function saveKey() {
-  const inputKey = $('key').value.trim();
-  if (!inputKey) {
-    showToast('Please enter an API key.', 'error');
-    return;
-  }
-  state.apiKey = inputKey;
-  sessionStorage.setItem('denial_demo_key', inputKey);
-  showToast('API Key configured.', 'success');
-  refresh();
-}
+
 
 // Navigation
 function showSection(sectionId) {
@@ -1228,8 +1217,6 @@ window.addEventListener('DOMContentLoaded', () => {
   if (savedTheme) {
     document.documentElement.setAttribute('data-theme', savedTheme);
   }
-
-  if ($('key')) $('key').value = state.apiKey;
 
   if ($('form_service_date')) {
     $('form_service_date').value = new Date().toISOString().slice(0, 10);

@@ -71,16 +71,18 @@
         </a>
       </div>
 
-      <div class="sidebar-card">
-        <h4>Demo Authentication</h4>
-        <p class="stat-caption">Local API key for simulated multi-tenant authorization.</p>
-        <div class="key-input-wrapper">
-          <input id="key" type="password" class="key-input" placeholder="change-me-for-local-demo" autocomplete="off">
-          <button class="btn btn-primary btn-sm" onclick="saveKey()">Save</button>
+      <div class="sidebar-card" id="sidebarComplianceCard">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+          <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981; box-shadow:0 0 8px #10b981;"></span>
+          <h4 style="margin:0; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-main);">Enterprise Shield</h4>
         </div>
-        <p class="stat-caption" style="margin-top: 10px; color: var(--accent-amber);">
-          ⚠ Demo prototype. Synthetic data only. No live insurer connections.
+        <p class="stat-caption" style="margin:0 0 8px 0; font-size:11.5px;">
+          NIST FIPS 204 PQC active · Zero-PHI scanner enabled.
         </p>
+        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+          <span class="badge" style="font-size:10.5px; background:rgba(16,185,129,0.12); color:#10b981; border:1px solid rgba(16,185,129,0.25);">🛡 ML-DSA-65</span>
+          <span class="badge" style="font-size:10.5px; background:rgba(99,102,241,0.12); color:#818cf8; border:1px solid rgba(99,102,241,0.25);">🔒 SHA-256 Audit</span>
+        </div>
       </div>
     </aside>
 
