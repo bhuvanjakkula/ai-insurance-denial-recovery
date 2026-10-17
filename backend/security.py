@@ -37,6 +37,8 @@ ALGORITHM = 'ML-DSA-65'
 
 
 def keydir() -> Path:
+    if os.environ.get('VERCEL') or os.environ.get('AWS_LAMBDA_FUNCTION_NAME'):
+        return Path(os.environ.get('MEDRECOVER_KEYDIR') or '/tmp/.medrecover')
     return Path(os.environ.get('MEDRECOVER_KEYDIR') or (Path.home() / '.medrecover'))
 
 

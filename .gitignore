@@ -8,3 +8,5 @@ __pycache__/
 .medrecover/
 owner_sk.b64
 *_sk.b64
+.vercel/
+*.log

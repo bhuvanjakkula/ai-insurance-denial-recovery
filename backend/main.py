@@ -31,6 +31,8 @@ from backend.llm import enhance_appeal, status as llm_status
 from backend import security, accounts
 
 ROOT = Path(__file__).resolve().parent.parent
+if os.environ.get('VERCEL') or os.environ.get('AWS_LAMBDA_FUNCTION_NAME'):
+    os.environ.setdefault('DATABASE_URL', 'sqlite:////tmp/denials.db')
 DB_URL = os.environ.get('DATABASE_URL', f'sqlite:///{ROOT / "denials.db"}')
 engine = create_engine(
     DB_URL,
