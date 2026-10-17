@@ -37,18 +37,27 @@ TRIAL_DAYS = 90
 SESSION_COOKIE = 'mr_user'
 SESSION_TTL = 7 * 24 * 3600
 
+DEFAULT_STRIPE_LINKS = {
+    'starter': 'https://buy.stripe.com/test_aFa6ozfXtgX3e7LbSvcjS0s',
+    'professional': 'https://buy.stripe.com/test_14AeV56mT229gfT9KncjS0t',
+    'enterprise': 'https://buy.stripe.com/test_aFa00bh1x0Y57JncWzcjS0u',
+}
+
 PLANS = [
     {'id': 'starter', 'name': 'Starter', 'price_usd': 79, 'tagline': 'Small practices getting started',
+     'checkout_url': DEFAULT_STRIPE_LINKS['starter'],
      'features': ['1 clinic location', 'Up to 150 active denials', 'Action Center & priority queue',
                   'Explainable CARC rules engine', 'Appeal letter drafting + human sign-off',
                   'CSV import / export', 'Email support (2 business days)']},
     {'id': 'professional', 'name': 'Professional', 'price_usd': 199, 'popular': True,
      'tagline': 'Growing clinics that want recovery on autopilot',
+     'checkout_url': DEFAULT_STRIPE_LINKS['professional'],
      'features': ['Up to 3 clinic locations', 'Up to 1,000 active denials', 'Everything in Starter',
                   'Remittance AI: X12 835 + EOB import', 'Evidence Gap Radar & win-probability scoring',
                   '12-week cash forecast & prevention playbooks', 'Batch appeals & batch status',
                   'Priority support (1 business day)']},
     {'id': 'enterprise', 'name': 'Enterprise', 'price_usd': 499, 'tagline': 'Groups, billing companies & hospitals',
+     'checkout_url': DEFAULT_STRIPE_LINKS['enterprise'],
      'features': ['Unlimited locations & denials', 'Everything in Professional',
                   'Post-quantum (ML-DSA) audit attestation', 'Role-based API keys & tamper-evident audit chain',
                   'Dedicated onboarding & payer playbooks', '4-hour support SLA', 'Custom contract & invoicing']},
@@ -229,7 +238,7 @@ class EnquiryInput(BaseModel):
 @router.get('/api/pricing')
 def pricing():
     return {'currency': 'USD', 'billing': 'monthly', 'trial_days': TRIAL_DAYS, 'card_required': False,
-            'plans': [{**p, 'checkout_url': os.environ.get(f'STRIPE_LINK_{p["id"].upper()}')} for p in PLANS],
+            'plans': [{**p, 'checkout_url': os.environ.get(f'STRIPE_LINK_{p["id"].upper()}', p.get('checkout_url'))} for p in PLANS],
             'support_email': SUPPORT_EMAIL}
 
 
@@ -361,7 +370,8 @@ def select_plan(payload: PlanInput, request: Request):
         raise HTTPException(422, 'Unknown plan.')
     with _engine.begin() as c:
         c.execute(update(users).where(users.c.id == u['id']).values(plan_requested=payload.plan))
-    url = os.environ.get(f'STRIPE_LINK_{payload.plan.upper()}')
+    default_url = next((p.get('checkout_url') for p in PLANS if p['id'] == payload.plan), None)
+    url = os.environ.get(f'STRIPE_LINK_{payload.plan.upper()}', default_url)
     _notify(f'Plan selected: {payload.plan} by {u["email"]}', f'{u["email"]} ({u["mobile"]}) chose {payload.plan}.')
     return {'ok': True, 'plan_requested': payload.plan, 'checkout_url': url,
             'message': (f'Your {payload.plan.title()} plan is reserved. You keep full access until your free trial ends; '

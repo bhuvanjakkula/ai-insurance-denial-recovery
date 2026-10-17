@@ -48,6 +48,10 @@
         <ul>${pl.features.map(f => `<li>✓ ${esc(f)}</li>`).join('')}</ul>
         <button class="btn ${pl.popular ? 'btn-primary' : 'btn-secondary'}" data-plan="${esc(pl.id)}" style="width:100%;">
           ${account ? 'Choose ' + esc(pl.name) : 'Start free trial'}</button>
+        ${pl.checkout_url ? `
+        <a href="${esc(pl.checkout_url)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm" style="display:flex; align-items:center; justify-content:center; gap:6px; width:100%; text-decoration:none; margin-top:8px; font-weight:600; font-size:12px; color:var(--text, #f1f5f9); background:rgba(99,102,241,0.12); border:1px solid rgba(99,102,241,0.4); border-radius:6px; padding:7px 10px;">
+          <span>💳</span><span>Subscribe with Stripe ($${pl.price_usd}/mo)</span>
+        </a>` : ''}
       </article>`).join('');
     $('plans').querySelectorAll('button[data-plan]').forEach(b => b.addEventListener('click', () => choose(b.dataset.plan)));
     $('supportMail').textContent = p.support_email;
