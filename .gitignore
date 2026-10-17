@@ -4,3 +4,7 @@ __pycache__/
 *.db
 .env
 .venv/
+
+.medrecover/
+owner_sk.b64
+*_sk.b64

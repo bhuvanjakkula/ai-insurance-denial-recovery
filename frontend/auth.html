@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign in or start your free trial | MedRecover AI</title>
+  <meta name="description" content="Sign in to MedRecover AI or create an account. 3 months free, no credit card. Recover denied insurance claims faster.">
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body class="site-page">
+  <header class="site-nav">
+    <a href="/" class="brand"><div class="brand-icon">⚕</div><div class="brand-title">MedRecover AI</div></a>
+    <nav class="site-links">
+      <a href="/pricing">Pricing</a>
+      <a href="/pricing#contact">Contact &amp; support</a>
+    </nav>
+  </header>
+
+  <main class="auth-wrap">
+    <section class="auth-hero" aria-label="Why MedRecover">
+      <span class="trial-ribbon">🎁 3 months free · no credit card</span>
+      <h1 class="ac-title" style="font-size:34px;">Recover the revenue your payers denied.</h1>
+      <ul class="auth-points">
+        <li>⚡ A ranked "do this now" queue worth real dollars</li>
+        <li>🧠 Paste an 835 or EOB and get every denial scored</li>
+        <li>📝 Evidence-grounded appeals with human sign-off</li>
+        <li>🛡 Private workspace per clinic, tamper-evident audit trail</li>
+      </ul>
+      <p class="stat-caption">After the trial, plans start at $79/month. Cancel anytime.</p>
+    </section>
+
+    <section class="panel auth-card" aria-labelledby="authTitle">
+      <div class="auth-tabs" role="tablist">
+        <button id="tabSignin" role="tab" class="auth-tab" type="button">Sign in</button>
+        <button id="tabSignup" role="tab" class="auth-tab" type="button">Create account</button>
+      </div>
+      <h2 id="authTitle" class="ac-h2" style="margin-top:14px;">Welcome back</h2>
+
+      <form id="authForm" novalidate autocomplete="on">
+        <div id="signupOnly">
+          <label for="fName">Full name</label>
+          <input id="fName" type="text" autocomplete="name" maxlength="120">
+          <label for="fClinic">Clinic / practice name</label>
+          <input id="fClinic" type="text" autocomplete="organization" maxlength="150">
+          <label for="fMobile">Mobile number</label>
+          <input id="fMobile" type="tel" autocomplete="tel" placeholder="+14155550123" inputmode="tel">
+        </div>
+        <label for="fEmail">E-mail</label>
+        <input id="fEmail" type="email" autocomplete="email" required maxlength="254">
+        <label for="fPassword">Password</label>
+        <div class="pw-row">
+          <input id="fPassword" type="password" autocomplete="current-password" required maxlength="128">
+          <button type="button" id="btnShowPw" class="btn btn-secondary btn-sm" aria-label="Show password">Show</button>
+        </div>
+        <div id="pwMeter" class="pw-meter" aria-hidden="true"><span></span></div>
+        <p id="pwHint" class="stat-caption"></p>
+        <div id="signupTerms" class="stat-caption">By creating an account you agree to use synthetic or de-identified data only during the demo.</div>
+        <p id="authError" class="auth-error" role="alert"></p>
+        <button id="btnSubmit" class="btn btn-primary" type="submit" style="width:100%; margin-top:6px;">Sign in</button>
+      </form>
+
+      <p class="stat-caption" style="margin-top:14px; text-align:center;">
+        Just exploring? <a href="#" id="linkDemo">Use the demo workspace (synthetic data)</a>
+        · <a href="/pricing#contact">Need help?</a>
+      </p>
+    </section>
+  </main>
+  <script src="/auth.js"></script>
+</body>
+</html>

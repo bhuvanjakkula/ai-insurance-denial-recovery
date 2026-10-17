@@ -1,6 +1,639 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Denial Recovery | Clinic Console</title><link rel="stylesheet" href="/app.css"></head><body>
-<header><div class="brand">✳ <strong>Denial Recovery</strong><span class="tag">DEMO</span></div><span>Clinic revenue operations</span></header>
-<main><aside><h3>Workspace</h3><button class="nav active" onclick="showSection('dashboard')">▦ Dashboard</button><button class="nav" onclick="showSection('intake')">＋ Add / Import Claims</button><button class="nav" onclick="showSection('audit')">◷ Audit history</button><hr><label for="key">Demo API key</label><input id="key" type="password" placeholder="change-me-for-local-demo" autocomplete="off"><button onclick="saveKey()">Connect</button><p class="muted small">For demonstration with synthetic data only. Never enter real patient information.</p></aside>
-<section class="content"><div id="message" role="status"></div><div id="dashboard"><div class="heading"><div><p class="eyebrow">REVENUE CYCLE MANAGEMENT</p><h1>Denials overview</h1><p class="muted">Review, prioritize, and prepare claims for human-led recovery.</p></div><button onclick="exportCsv()">Export CSV ↗</button></div><div class="stats"><article><label>Denied claims</label><strong id="count">—</strong><small>Total records</small></article><article><label>Denied amount</label><strong id="amount">—</strong><small>Not guaranteed recoverable</small></article><article><label>Pending resolution</label><strong id="pending">—</strong><small>Active workflow</small></article></div><div class="panel"><div class="panelhead"><h2>Claims queue</h2><button onclick="refresh()">↻ Refresh</button></div><div class="tablewrap"><table><thead><tr><th>Claim</th><th>Payer</th><th>Denial</th><th>Amount</th><th>Status</th><th>Review</th></tr></thead><tbody id="claims"><tr><td colspan="6">Enter your demo API key, then connect.</td></tr></tbody></table></div></div><div class="panel" id="detail" hidden></div></div>
-<div id="intake" hidden><h1>Add or import claims</h1><p class="muted">Use fictional identifiers and non-PHI data only.</p><div class="panel"><h2>New claim</h2><form id="create" class="formgrid"><label>Clinic name<input name="clinic_name" required value="Demo Medical Group"></label><label>Claim number<input name="claim_number" required placeholder="SYN-1004"></label><label>Payer<input name="payer" required placeholder="Example Payer"></label><label>Date of service<input name="service_date" type="date" required></label><label>Denial code<input name="denial_code" required placeholder="CO-50"></label><label>Denied amount ($)<input name="denied_amount" type="number" step="0.01" min="0.01" required></label><label>Appeal deadline (optional)<input name="appeal_deadline" type="date"></label><label>Notes (non-PHI)<input name="notes" placeholder="No patient details"></label><button type="submit">Create claim</button></form></div><div class="panel"><h2>Bulk CSV import</h2><p class="muted">Required fields: clinic_name, claim_number, payer, service_date, denial_code, denied_amount. Optional: appeal_deadline, notes. Max 1000 rows / 2 MB.</p><form id="upload"><input type="file" id="csv" accept=".csv,text/csv" required><button type="submit">Import CSV</button></form></div></div>
-<div id="audit" hidden><h1>Audit history</h1><div class="panel"><pre id="events">Connect to load events.</pre></div></div></section></main><footer>Demo prototype · Human review required · No payer submissions or PHI integrations</footer><script src="/app.js"></script></body></html>
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MedRecover AI | Enterprise Denial Recovery & Appeals Console</title>
+  <meta name="description" content="AI-assisted insurance denial triage, explainable CARC rule analysis, prioritized worklists, and clinical appeal drafting for medical clinic revenue teams.">
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+
+  <!-- Top App Navigation -->
+  <header>
+    <a href="#" class="brand" onclick="showSection('dashboard'); return false;">
+      <div class="brand-icon">⚕</div>
+      <div class="brand-title">
+        MedRecover AI
+        <span class="badge-demo">CLINICAL RCM</span>
+      </div>
+    </a>
+
+    <div class="header-actions">
+      <div class="clinic-badge" title="Filter the worklist by clinic">
+        <span class="pulse-dot" id="liveDot"></span>
+        <select id="clinicSelect" onchange="selectClinic(this.value)" aria-label="Clinic" style="background:transparent; color:inherit; border:0; font:inherit; cursor:pointer; max-width:240px;">
+          <option value="all">All clinics</option>
+        </select>
+        <span id="liveStatus" class="stat-caption" style="white-space:nowrap;">Live</span>
+        <span id="ownerLabel" class="badge badge-code" style="display:none;"></span>
+        <span id="activeClinicLabel" style="display:none;"></span>
+      </div>
+      <button class="btn btn-secondary btn-sm" id="btnSeedDemo" onclick="seedDemoClaims()">
+        ⚡ Seed 10 Claims
+      </button>
+      <button class="btn btn-secondary btn-sm" id="btnExport" onclick="exportCsv()">
+        Export CSV ↗
+      </button>
+      <button class="btn btn-secondary btn-sm" id="btnThemeToggle" onclick="toggleTheme()" title="Toggle Dark/Light Mode">
+        🌓
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <div class="app-container">
+    
+    <!-- Left Navigation Sidebar -->
+    <aside>
+      <div>
+        <p class="nav-group-title">Operations Console</p>
+        <button class="nav-item active" id="navActions" onclick="showSection('actions')">
+          <span class="nav-icon">⚡</span> Action Center
+        </button>
+        <button class="nav-item" id="navDashboard" onclick="showSection('dashboard')">
+          <span class="nav-icon">▦</span> Triage Dashboard
+        </button>
+        <button class="nav-item" id="navRemit" onclick="showSection('remit')">
+          <span class="nav-icon">🧠</span> Remittance AI
+        </button>
+        <button class="nav-item" id="navIntake" onclick="showSection('intake')">
+          <span class="nav-icon">＋</span> Add / Import Claims
+        </button>
+        <button class="nav-item" id="navAudit" onclick="showSection('audit')">
+          <span class="nav-icon">◷</span> Audit History Log
+        </button>
+        <button class="nav-item" id="navInbox" onclick="showSection('inbox')" style="display:none;">
+          <span class="nav-icon">✉</span> Support Inbox
+        </button>
+        <a class="nav-item" id="navPricing" href="/pricing" style="text-decoration:none;">
+          <span class="nav-icon">$</span> Pricing &amp; Support
+        </a>
+      </div>
+
+      <div class="sidebar-card">
+        <h4>Demo Authentication</h4>
+        <p class="stat-caption">Local API key for simulated multi-tenant authorization.</p>
+        <div class="key-input-wrapper">
+          <input id="key" type="password" class="key-input" placeholder="change-me-for-local-demo" autocomplete="off">
+          <button class="btn btn-primary btn-sm" onclick="saveKey()">Save</button>
+        </div>
+        <p class="stat-caption" style="margin-top: 10px; color: var(--accent-amber);">
+          ⚠ Demo prototype. Synthetic data only. No live insurer connections.
+        </p>
+      </div>
+    </aside>
+
+    <!-- Main Dynamic Content Region -->
+    <main class="main-content">
+      
+      <!-- Toast Notification Container -->
+      <div id="toast" class="toast" style="display: none;"></div>
+
+      <!-- ===================================================================
+           SECTION 1: DASHBOARD
+           =================================================================== -->
+      <section id="actions">
+        <div class="ac-hero">
+          <div>
+            <h1 class="ac-title">Today's Recovery Plan</h1>
+            <p class="stat-caption" id="acSubtitle">Loading your highest-value actions…</p>
+          </div>
+          <div class="ac-hero-actions">
+            <button class="btn btn-primary" id="btnDraftTop" onclick="draftAllPlays()">⚡ Draft all top plays</button>
+            <button class="btn btn-secondary" id="btnVerifyAudit" onclick="verifyAuditChain()">🔒 Verify audit integrity</button>
+            <button class="btn btn-secondary" id="btnPqcAttest" onclick="verifyPqcAttestation()">🛡 PQC attestation</button>
+            <button class="btn btn-secondary" id="btnOwnerLogout" onclick="ownerLogout()" style="display:none;">Sign out</button>
+          </div>
+        </div>
+
+        <div class="stats-grid" id="acKpis"></div>
+
+        <div class="ac-grid">
+          <div class="panel">
+            <h2 class="ac-h2">Do this now <span class="stat-caption">ranked by expected dollars × urgency</span></h2>
+            <div id="acPlays" class="ac-plays"></div>
+          </div>
+          <div class="ac-side">
+            <div class="panel">
+              <h2 class="ac-h2">12-week cash forecast</h2>
+              <div id="acForecast" class="ac-forecast"></div>
+              <p class="stat-caption" id="acForecastNote"></p>
+            </div>
+            <div class="panel">
+              <h2 class="ac-h2">Stop it at the source</h2>
+              <div id="acPrevention"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="remit" style="display: none;">
+        <div class="ac-hero">
+          <div>
+            <h1 class="ac-title">Remittance AI</h1>
+            <p class="stat-caption">Paste an X12 835 or EOB text. Every denial line is parsed, scored for win probability and best appeal path, then imported as a claim in one click.</p>
+          </div>
+          <div class="ac-hero-actions">
+            <button class="btn btn-secondary btn-sm" id="btnSample835" onclick="loadRemitSample('sample_835')">Load sample 835</button>
+            <button class="btn btn-secondary btn-sm" id="btnSampleEob" onclick="loadRemitSample('sample_eob')">Load sample EOB</button>
+          </div>
+        </div>
+        <div class="panel">
+          <textarea id="remitText" rows="7" style="width:100%; font-family: var(--font-mono); font-size:12px;" placeholder="Paste synthetic 835 / EOB text here (no real PHI)"></textarea>
+          <div style="display:flex; gap:8px; margin-top:10px;">
+            <button class="btn btn-primary" id="btnRemitParse" onclick="parseRemittance()">🧠 Parse &amp; score</button>
+            <button class="btn btn-secondary" id="btnRemitImport" onclick="importRemittance()" disabled>⬇ Import all as claims</button>
+          </div>
+        </div>
+        <div class="panel" style="margin-top:18px;">
+          <h2 class="ac-h2">Scored denial lines <span class="stat-caption" id="remitSummary"></span></h2>
+          <div id="remitResults" class="ac-plays"><p class="stat-caption">Nothing parsed yet.</p></div>
+        </div>
+      </section>
+
+      <section id="dashboard" style="display: none;">
+        
+        <!-- KPI Metrics Grid -->
+        <div class="stats-grid">
+          <article class="stat-card">
+            <div class="stat-header">
+              <span class="stat-label">Total Denied Exposure</span>
+              <div class="stat-icon icon-rose">💲</div>
+            </div>
+            <div class="stat-value" id="amount">$0.00</div>
+            <div class="stat-caption">Total dollar volume in queue</div>
+          </article>
+
+          <article class="stat-card">
+            <div class="stat-header">
+              <span class="stat-label">Active Claims in Queue</span>
+              <div class="stat-icon icon-blue">📋</div>
+            </div>
+            <div class="stat-value" id="pending">0</div>
+            <div class="stat-caption" id="totalRecordsLabel">0 total claims registered</div>
+          </article>
+
+          <article class="stat-card">
+            <div class="stat-header">
+              <span class="stat-label">Critical / Urgent Priority</span>
+              <div class="stat-icon icon-amber">🔥</div>
+            </div>
+            <div class="stat-value" id="criticalCount">0</div>
+            <div class="stat-caption">Impending appeal deadlines</div>
+          </article>
+
+          <article class="stat-card">
+            <div class="stat-header">
+              <span class="stat-label">Recovered Revenue</span>
+              <div class="stat-icon icon-emerald">✓</div>
+            </div>
+            <div class="stat-value" id="recoveredTotal" style="color: var(--accent-emerald);">$0.00</div>
+            <div class="stat-caption" id="resolvedCountLabel">0 claims overturned / paid</div>
+          </article>
+        </div>
+
+        <!-- Payer Exposure Velocity Row -->
+        <div class="payer-velocity-bar" id="payerVelocityBar">
+          <div class="velocity-label">
+            <span>🏛</span> Top Payer Exposure:
+          </div>
+          <div class="payer-chips" id="payerChips">
+            <span class="stat-caption">Loading payer distribution...</span>
+          </div>
+        </div>
+
+        <!-- Claims Worklist Panel -->
+        <div class="panel">
+          
+          <!-- Batch Actions Bar (Appears when claims are checked) -->
+          <div id="batchBar" class="batch-bar" style="display: none;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span class="badge badge-code" id="batchCountBadge">0 Selected</span>
+              <span style="font-weight: 600; font-size: 13px;">Batch Operations</span>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-primary btn-sm" onclick="executeBatchAppeals()">
+                ⚡ Batch Generate Level 1 Appeals
+              </button>
+              <button class="btn btn-secondary btn-sm" onclick="executeBatchStatus('submitted_manually')">
+                📤 Mark All Submitted
+              </button>
+              <button class="btn btn-secondary btn-sm" onclick="executeBatchStatus('in_review')">
+                ⏳ Mark In Review
+              </button>
+              <button class="btn btn-secondary btn-sm" onclick="clearBatchSelection()">
+                ✕ Deselect All
+              </button>
+            </div>
+          </div>
+
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">Prioritized Claims Worklist</h2>
+              <p class="stat-caption">Deterministic CARC triage, operational priority scoring, and clinical appeal drafts.</p>
+            </div>
+
+            <div class="toolbar">
+              <input type="text" id="searchInput" class="search-input" placeholder="Search claim #, payer, code..." oninput="handleSearch()">
+              
+              <select id="statusFilter" class="search-input" style="width: 140px;" onchange="applyFilters()">
+                <option value="all">All Statuses</option>
+                <option value="new">New</option>
+                <option value="in_review">In Review</option>
+                <option value="appeal_drafted">Appeal Drafted</option>
+                <option value="submitted_manually">Submitted</option>
+                <option value="paid">Paid / Won</option>
+                <option value="resolved">Resolved</option>
+                <option value="denied_again">Denied Again</option>
+              </select>
+
+              <select id="sortFilter" class="search-input" style="width: 140px;" onchange="applyFilters()">
+                <option value="priority">Sort: Priority</option>
+                <option value="amount">Sort: Amount</option>
+                <option value="deadline">Sort: Deadline</option>
+              </select>
+
+              <button class="btn btn-secondary btn-sm" onclick="refresh()">↻ Refresh</button>
+            </div>
+          </div>
+
+          <!-- Category Filter Pills -->
+          <div class="filter-pills" id="categoryPills">
+            <button class="pill-btn active" data-cat="all" onclick="filterByCategory('all')">All Categories</button>
+            <button class="pill-btn" data-cat="Medical necessity" onclick="filterByCategory('Medical necessity')">Medical Necessity</button>
+            <button class="pill-btn" data-cat="Authorization missing" onclick="filterByCategory('Authorization missing')">Prior Authorization</button>
+            <button class="pill-btn" data-cat="Timely filing" onclick="filterByCategory('Timely filing')">Timely Filing</button>
+            <button class="pill-btn" data-cat="Missing information" onclick="filterByCategory('Missing information')">Missing Info</button>
+            <button class="pill-btn" data-cat="Duplicate claim" onclick="filterByCategory('Duplicate claim')">Duplicate</button>
+            <button class="pill-btn" data-cat="Bundled service" onclick="filterByCategory('Bundled service')">Bundled</button>
+          </div>
+
+          <!-- Claims Table -->
+          <div class="table-wrapper" style="margin-top: 16px;">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 38px;">
+                    <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)" style="cursor: pointer; accent-color: var(--primary);">
+                  </th>
+                  <th>Claim Details</th>
+                  <th>Payer</th>
+                  <th>CARC & Denial Reason</th>
+                  <th>Denied Amount</th>
+                  <th>Appeal Deadline</th>
+                  <th>Priority Score</th>
+                  <th>Status</th>
+                  <th style="text-align: right;">Action</th>
+                </tr>
+              </thead>
+              <tbody id="claimsTableBody">
+                <tr>
+                  <td colspan="9" style="text-align: center; padding: 32px; color: var(--text-dim);">
+                    Enter your demo API key, or click <strong>Seed 10 Claims</strong> to load synthetic cases.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ===================================================================
+           SECTION 2: INTAKE & IMPORT
+           =================================================================== -->
+      <section id="intake" style="display: none;">
+        <div class="panel">
+          <h2 class="panel-title">Add New Denied Claim (Manual Entry)</h2>
+          <p class="stat-caption" style="margin-bottom: 20px;">
+            Input synthetic or de-identified claims for immediate CARC classification and priority calculation.
+          </p>
+
+          <form id="createClaimForm" class="form-grid">
+            <div class="form-group">
+              <label for="form_clinic_name">Clinic Name</label>
+              <input type="text" id="form_clinic_name" name="clinic_name" value="Metro Health Specialists" required>
+            </div>
+
+            <div class="form-group">
+              <label for="form_claim_number">Claim Reference Number</label>
+              <input type="text" id="form_claim_number" name="claim_number" placeholder="SYN-2026-99" required>
+            </div>
+
+            <div class="form-group">
+              <label for="form_payer">Insurance Payer</label>
+              <input type="text" id="form_payer" name="payer" placeholder="UnitedHealthcare, Aetna, BCBS..." required>
+            </div>
+
+            <div class="form-group">
+              <label for="form_service_date">Date of Service</label>
+              <input type="date" id="form_service_date" name="service_date" required>
+            </div>
+
+            <div class="form-group">
+              <label for="form_denial_code">Denial Code (CARC)</label>
+              <input type="text" id="form_denial_code" name="denial_code" placeholder="e.g. CO-50, CO-197, CO-29, CO-16" required>
+            </div>
+
+            <div class="form-group">
+              <label for="form_denied_amount">Denied Amount ($)</label>
+              <input type="number" id="form_denied_amount" name="denied_amount" step="0.01" min="0.01" placeholder="1250.00" required>
+            </div>
+
+            <div class="form-group">
+              <label for="form_appeal_deadline">Appeal Deadline (optional)</label>
+              <input type="date" id="form_appeal_deadline" name="appeal_deadline">
+            </div>
+
+            <div class="form-group">
+              <label for="form_notes">Clinical Notes (Non-PHI)</label>
+              <input type="text" id="form_notes" name="notes" placeholder="e.g. MRI denied for conservative therapy failure proof">
+            </div>
+
+            <div class="form-group full-width" style="margin-top: 10px;">
+              <button type="submit" class="btn btn-primary" style="max-width: 220px;">
+                Create & Triage Claim
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Bulk CSV Import Card -->
+        <div class="panel">
+          <h2 class="panel-title">Bulk CSV Import</h2>
+          <p class="stat-caption" style="margin-bottom: 20px;">
+            Import up to 1,000 synthetic claims simultaneously. Required headers: <code>clinic_name, claim_number, payer, service_date, denial_code, denied_amount</code>. Optional: <code>appeal_deadline, notes</code>.
+          </p>
+
+          <form id="uploadCsvForm">
+            <div class="upload-dropzone" onclick="document.getElementById('csvFileInput').click()">
+              <div class="dropzone-icon">📁</div>
+              <p><strong>Click to choose a CSV file</strong> or drag and drop here</p>
+              <p class="stat-caption" id="fileNamePreview">No file chosen yet</p>
+              <input type="file" id="csvFileInput" accept=".csv,text/csv" style="display: none;" onchange="handleFileSelected(this)">
+            </div>
+            <div style="margin-top: 16px; display: flex; gap: 12px;">
+              <button type="submit" class="btn btn-primary" id="btnUploadCsv">Upload & Process CSV</button>
+              <button type="button" class="btn btn-secondary" onclick="seedDemoClaims()">Or Load Default Sample Data</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           SECTION 3: AUDIT TRAIL LOG
+           =================================================================== -->
+      <section id="audit" style="display: none;">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">System Action & Audit Event Stream</h2>
+              <p class="stat-caption">Immutable record of triage evaluations, draft generations, approvals, and CSV uploads.</p>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="loadAudit()">↻ Refresh Audit Log</button>
+          </div>
+
+          <div id="auditList" style="display: flex; flex-direction: column; gap: 12px; margin-top: 16px;">
+            <p style="color: var(--text-dim);">Loading audit events...</p>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- =======================================================================
+       APPEAL STUDIO & CLINICAL REVIEW MODAL
+       ======================================================================= -->
+  <div id="studioModal" class="studio-overlay" style="display: none;">
+    <div class="studio-modal">
+      <div class="studio-header">
+        <div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span class="badge badge-code" id="modalClaimNumber">SYN-XXXX</span>
+            <span class="badge badge-category" id="modalCategoryBadge">Category</span>
+            <span class="badge" id="modalPriorityBadge">Priority Score: 85</span>
+          </div>
+          <p class="stat-caption" style="margin-top: 4px;" id="modalSubtitle">
+            Payer: Aetna | Amount: $2,840.00 | Deadline: Nov 05, 2026
+          </p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <button class="btn btn-warning btn-sm" onclick="openOutcomeModal()">
+            💵 Record Dollar Outcome
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="closeStudio()">✕ Close</button>
+        </div>
+      </div>
+
+      <div class="studio-body">
+        <!-- Left Column: Triage Diagnosis, Payer Dispatch & Evidence Checklist -->
+        <div>
+          <!-- Left column tabs: Triage vs Evidence Gap Radar -->
+          <div class="studio-tabs" role="tablist">
+            <button class="studio-tab active" id="tabBtnTriage" role="tab" onclick="switchStudioTab('triage')">🔍 Triage &amp; Checklist</button>
+            <button class="studio-tab" id="tabBtnRadar" role="tab" onclick="switchStudioTab('radar')">
+              📡 Evidence Radar <span class="tab-badge" id="tabRadarBadge" style="display: none;"></span>
+            </button>
+          </div>
+
+          <div id="tabTriage">
+          <!-- Payer Dispatch Directory Card -->
+          <div class="dispatch-box" id="modalDispatchBox">
+            <div class="dispatch-header">
+              <span>🏛 Payer Submission Channel</span>
+              <a href="#" id="modalPortalLink" target="_blank" style="color: var(--primary); font-size: 11.5px; text-decoration: underline;">Open Portal ↗</a>
+            </div>
+            <div class="dispatch-row">
+              <strong style="color: var(--text-main);">Fax:</strong>
+              <span id="modalFaxNumber">1-859-455-8650</span>
+              <button class="btn btn-secondary btn-sm" style="padding: 2px 6px; font-size: 10px; margin-left: auto;" onclick="copyPayerFax()">Copy</button>
+            </div>
+            <div class="dispatch-row">
+              <strong style="color: var(--text-main);">Address:</strong>
+              <span id="modalAddress" style="line-height: 1.3;">Payer Claims Appeals Dept</span>
+            </div>
+          </div>
+
+          <div class="studio-section-title">
+            <span>🔍</span> Denial Triage Analysis
+          </div>
+
+          <div class="info-card">
+            <div class="info-row">
+              <span class="info-label">CARC Reason:</span>
+              <span class="info-val" id="modalDenialCode">CO-50</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Category:</span>
+              <span class="info-val" id="modalCategoryText">Medical Necessity</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Benchmark Reversal:</span>
+              <span class="info-val" id="modalReversalRate" style="color: var(--accent-emerald);">62%</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Days to Deadline:</span>
+              <span class="info-val" id="modalDaysToDeadline">20 days</span>
+            </div>
+          </div>
+
+          <div class="info-card">
+            <h4 style="font-size: 12px; color: var(--text-muted); margin-bottom: 6px;">RECOMMENDED STRATEGY</h4>
+            <p style="font-size: 13px; color: var(--text-main); line-height: 1.5;" id="modalRecommendedAction">
+              Action strategy here...
+            </p>
+          </div>
+
+          <div class="info-card">
+            <h4 style="font-size: 12px; color: var(--text-muted); margin-bottom: 6px;">REGULATORY / LEGAL BASIS</h4>
+            <p style="font-size: 12px; color: var(--text-dim); line-height: 1.4;" id="modalCitation">
+              CMS LCD/NCD, ERISA 29 C.F.R. § 2560.503-1
+            </p>
+          </div>
+
+          <div class="studio-section-title" style="margin-top: 20px;">
+            <span>📋</span> Required Evidence Checklist
+          </div>
+          <p class="stat-caption" style="margin-bottom: 12px;">
+            Verify and collect clinical items before sending appeal draft.
+          </p>
+
+          <div id="modalEvidenceList">
+            <!-- Checklist items inserted dynamically -->
+          </div>
+
+          <div style="margin-top: 20px;">
+            <label for="modalStatusSelect" style="display: block; margin-bottom: 6px;">Update Claim Status</label>
+            <div style="display: flex; gap: 8px;">
+              <select id="modalStatusSelect" style="flex: 1;">
+                <option value="new">new</option>
+                <option value="in_review">in_review</option>
+                <option value="appeal_drafted">appeal_drafted</option>
+                <option value="submitted_manually">submitted_manually</option>
+                <option value="paid">paid / won</option>
+                <option value="resolved">resolved</option>
+                <option value="denied_again">denied_again</option>
+                <option value="closed">closed</option>
+              </select>
+              <button class="btn btn-secondary btn-sm" onclick="saveClaimStatusFromModal()">Save</button>
+            </div>
+          </div>
+          </div><!-- /tabTriage -->
+
+          <!-- Evidence Gap Radar -->
+          <div id="tabRadar" style="display: none;">
+            <div class="studio-section-title"><span>📡</span> Evidence Gap Radar</div>
+            <p class="stat-caption" style="margin-bottom: 10px;">
+              Paste a <strong>de-identified</strong> chart note. The radar audits it against payer-policy criteria for this denial
+              type, shows exactly what is proven vs. missing, and ranks the fastest fixes by recovery impact.
+            </p>
+            <label for="radarNoteInput" class="sr-only" style="position: absolute; left: -9999px;">Clinical note</label>
+            <textarea id="radarNoteInput" class="radar-note" rows="7" placeholder="e.g. Patient presents with 7 weeks of low back pain... Completed 4 weeks of physical therapy with minimal improvement..."></textarea>
+            <div class="radar-controls">
+              <label class="radar-weeks" for="radarWeeks">
+                Policy needs ≥
+                <input type="number" id="radarWeeks" min="1" max="52" value="6"> wks conservative tx
+              </label>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn btn-secondary btn-sm" id="btnRadarSample" onclick="loadRadarSample()">Load sample note</button>
+                <button class="btn btn-primary btn-sm" id="btnRadarRun" onclick="runEvidenceRadar()">📡 Scan Evidence</button>
+              </div>
+            </div>
+            <div id="radarResult"></div>
+          </div>
+        </div>
+
+        <!-- Right Column: Live Appeal Letter Studio -->
+        <div class="letter-editor-wrapper">
+          <div class="studio-section-title" style="justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span>✉</span> Formal Appeal Letter Draft
+            </div>
+
+            <!-- Level 1 vs Level 2 Switch -->
+            <div class="level-toggle-group">
+              <button class="level-toggle-btn active" id="btnLevel1" onclick="switchAppealLevel(1)">
+                Level 1: Reconsideration
+              </button>
+              <button class="level-toggle-btn" id="btnLevel2" onclick="switchAppealLevel(2)">
+                Level 2: Escalation
+              </button>
+            </div>
+          </div>
+
+          <textarea id="modalLetterTextarea" class="letter-textarea" placeholder="Loading appeal draft..."></textarea>
+
+          <div class="letter-actions">
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button class="btn btn-secondary btn-sm" onclick="copyModalLetter()">📋 Copy Letter</button>
+              <button class="btn btn-secondary btn-sm" onclick="downloadModalLetter()">💾 Download TXT</button>
+              <button class="btn btn-secondary btn-sm" onclick="printModalLetter()">🖨 Print / PDF</button>
+              <button class="btn btn-secondary btn-sm" onclick="saveEditedLetter()">💾 Save Edits</button>
+            </div>
+
+            <!-- Sign-Off & Approval -->
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px;">
+                <input type="checkbox" id="modalConfirmReview" style="accent-color: var(--accent-emerald);">
+                <span>Human Clinical Sign-Off</span>
+              </label>
+              <button class="btn btn-success btn-sm" id="btnApproveAppeal" onclick="recordApproval()">
+                ✓ Approve Appeal
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =======================================================================
+       OUTCOME & DOLLARS WON RECORDING MODAL
+       ======================================================================= -->
+  <div id="outcomeModal" class="studio-overlay" style="display: none; z-index: 300;">
+    <div class="studio-modal" style="max-width: 520px;">
+      <div class="studio-header">
+        <h3 style="font-size: 16px; font-weight: 700;">Record Claim Outcome & Dollars Recovered</h3>
+        <button class="btn btn-secondary btn-sm" onclick="closeOutcomeModal()">✕</button>
+      </div>
+      <div style="padding: 24px;">
+        <p class="stat-caption" style="margin-bottom: 16px;">
+          Record the adjudication resolution after insurer reconsideration or payment remittance.
+        </p>
+
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label for="outcome_status_select">Adjudication Outcome</label>
+          <select id="outcome_status_select">
+            <option value="paid">Paid in Full (Overturned)</option>
+            <option value="resolved">Partially Paid / Resolved</option>
+            <option value="denied_again">Denied Again (Escalate to Level 2)</option>
+            <option value="closed">Written Off / Closed</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label for="outcome_recovered_amount">Actual Dollars Recovered ($)</label>
+          <input type="number" id="outcome_recovered_amount" step="0.01" min="0" placeholder="e.g. 1750.00">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 20px;">
+          <label for="outcome_notes">Remittance / Settlement Notes</label>
+          <input type="text" id="outcome_notes" placeholder="e.g. Paid per Check #88419 after Level 1 appeal">
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button class="btn btn-secondary btn-sm" onclick="closeOutcomeModal()">Cancel</button>
+          <button class="btn btn-success btn-sm" onclick="submitClaimOutcome()">
+            Save Recovery & Update Metrics
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Client Application Logic -->
+  <script src="/app.js"></script>
+</body>
+</html>

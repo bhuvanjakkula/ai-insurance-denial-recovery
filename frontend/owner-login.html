@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Owner Sign-in | MedRecover AI</title>
+  <meta name="description" content="Passwordless post-quantum owner sign-in for MedRecover AI.">
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <main style="max-width: 560px; margin: 8vh auto; padding: 0 16px;">
+    <div class="panel" style="text-align:center;">
+      <div class="brand-icon" style="margin: 0 auto 12px;">⚕</div>
+      <h1 class="ac-title">Owner sign-in</h1>
+      <p class="stat-caption">No password. Your device holds an ML-DSA-65 (post-quantum) private key and signs a short-lived, single-use token.</p>
+      <ol class="stat-caption" style="text-align:left; margin: 14px auto; max-width: 420px;">
+        <li>On your computer run <code>python tools/owner_access.py</code></li>
+        <li>The signed token is copied to your clipboard</li>
+        <li>Click <strong>Sign in with clipboard</strong> (or paste below)</li>
+      </ol>
+      <textarea id="tokenBox" rows="3" style="width:100%; font-family: var(--font-mono); font-size:11px;" placeholder="Paste owner token here" autocomplete="off" spellcheck="false"></textarea>
+      <div style="display:flex; gap:8px; justify-content:center; margin-top:12px; flex-wrap:wrap;">
+        <button class="btn btn-primary" id="btnClipboardLogin">🔑 Sign in with clipboard</button>
+        <button class="btn btn-secondary" id="btnPasteLogin">Sign in with pasted token</button>
+      </div>
+      <p id="loginStatus" class="stat-caption" style="margin-top:14px;" role="status"></p>
+    </div>
+  </main>
+  <script src="/owner-login.js"></script>
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pricing, enquiries &amp; support | MedRecover AI</title>
+  <meta name="description" content="MedRecover AI pricing in USD per month. 3 months free, no credit card. Starter $79, Professional $199, Enterprise $499. Contact sales and support.">
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body class="site-page">
+  <header class="site-nav">
+    <a href="/" class="brand"><div class="brand-icon">⚕</div><div class="brand-title">MedRecover AI</div></a>
+    <nav class="site-links">
+      <a href="/pricing#contact">Contact &amp; support</a>
+      <a href="/" id="navApp">Open app</a>
+      <a href="/signin" id="navSignin">Sign in</a>
+      <a href="/signup" class="btn btn-primary btn-sm" id="navSignup">Start free trial</a>
+    </nav>
+  </header>
+
+  <main class="pricing-wrap">
+    <section style="text-align:center;">
+      <span class="trial-ribbon">🎁 First 3 months free · no credit card</span>
+      <h1 class="ac-title" style="font-size:36px; margin-top:12px;">Simple USD pricing. Pays for itself with one recovered claim.</h1>
+      <p class="stat-caption" id="trialBanner">Choose a plan now or later; you keep full access during your trial. Prices are per month in US dollars.</p>
+      <p id="welcomeMsg" class="auth-ok" role="status" style="display:none;"></p>
+    </section>
+
+    <section id="plans" class="plan-grid" aria-label="Pricing plans"></section>
+
+    <section class="panel" style="margin-top:28px;">
+      <h2 class="ac-h2">Every plan includes</h2>
+      <div class="plan-incl">
+        <span>🔒 Private workspace per clinic</span><span>🧾 Hash-chained audit trail</span>
+        <span>🙋 Human sign-off on every appeal</span><span>📤 CSV export, no lock-in</span>
+        <span>🚫 PHI safety scanner</span><span>💬 Email support</span>
+      </div>
+    </section>
+
+    <section class="panel" style="margin-top:18px;">
+      <h2 class="ac-h2">Common questions</h2>
+      <details><summary>Do I need a credit card for the free trial?</summary><p class="stat-caption">No. Sign up with your e-mail and mobile number. Nothing is charged during the 3 months.</p></details>
+      <details><summary>What happens when the trial ends?</summary><p class="stat-caption">Your data stays safe. The app pauses until you pick a plan. We remind you before it ends.</p></details>
+      <details><summary>Can I change or cancel plans?</summary><p class="stat-caption">Yes, any time. Upgrade as you add clinics or volume.</p></details>
+      <details><summary>Can I use real patient data?</summary><p class="stat-caption">This release is for synthetic or de-identified data. Production PHI use needs a signed BAA and hosting review; contact us for Enterprise onboarding.</p></details>
+    </section>
+
+    <section id="contact" class="panel contact-panel" aria-labelledby="contactTitle">
+      <div>
+        <h2 id="contactTitle" class="ac-h2">Enquiries &amp; customer support</h2>
+        <p class="stat-caption">Questions about plans, a demo for your clinics, or help with your account? Send us a message and we will reply by e-mail.</p>
+        <p style="margin-top:10px;">📧 <a id="supportMail" href="mailto:bjtmusic12@gmail.com">bjtmusic12@gmail.com</a></p>
+      </div>
+      <form id="enqForm" novalidate>
+        <label for="eName">Your name</label><input id="eName" type="text" maxlength="120" autocomplete="name">
+        <label for="eEmail">E-mail</label><input id="eEmail" type="email" maxlength="254" autocomplete="email">
+        <label for="eMobile">Mobile (optional)</label><input id="eMobile" type="tel" placeholder="+14155550123" autocomplete="tel">
+        <label for="eTopic">Topic</label>
+        <select id="eTopic">
+          <option value="enquiry">Pricing / sales enquiry</option>
+          <option value="demo">Book a demo</option>
+          <option value="support">Technical support</option>
+          <option value="billing">Billing question</option>
+        </select>
+        <label for="eMessage">Message</label><textarea id="eMessage" rows="4" maxlength="4000"></textarea>
+        <input id="eWebsite" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute; left:-9999px; height:0; opacity:0;">
+        <p id="enqStatus" class="auth-error" role="status"></p>
+        <button id="btnEnquire" class="btn btn-primary" type="submit" style="width:100%;">Send message</button>
+      </form>
+    </section>
+  </main>
+  <script src="/pricing.js"></script>
+</body>
+</html>
