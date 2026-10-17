@@ -176,5 +176,31 @@ def test_enquiry_validation_honeypot_and_rate_limit():
 
 def test_pages_served():
     c = new_client()
-    for p in ('/signin', '/signup', '/pricing', '/auth.js', '/pricing.js'):
+    for p in ('/signin', '/signup', '/auth', '/pricing', '/owner-login', '/auth.js', '/pricing.js', '/owner-login.js'):
         assert c.get(p).status_code == 200, p
+
+
+def test_owner_passwordless_and_free_access():
+    c = new_client()
+    # Signin with owner email and NO password
+    res = c.post('/api/auth/signin', json={'email': 'bhuvanjakkula@gmail.com', 'password': ''})
+    assert res.status_code == 200
+    data = res.json()
+    assert data['ok'] is True
+    assert data['account']['plan'] == 'enterprise'
+    assert data['account']['status'] == 'active'
+
+    # Can access /api/account/me with active enterprise status
+    me = c.get('/api/account/me').json()
+    assert me['email'] == 'bhuvanjakkula@gmail.com'
+    assert me['plan'] == 'enterprise'
+    assert me['status'] == 'active'
+
+    # Auto-login route sets cookies and redirects to /
+    c2 = new_client()
+    redirect = c2.get('/api/auth/owner-auto-login', follow_redirects=False)
+    assert redirect.status_code == 303
+    assert redirect.headers['location'] == '/'
+    me2 = c2.get('/api/account/me').json()
+    assert me2['email'] == 'bhuvanjakkula@gmail.com'
+    assert me2['status'] == 'active'

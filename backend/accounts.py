@@ -25,6 +25,7 @@ from email.message import EmailMessage
 from typing import Callable, Dict, Optional
 
 from fastapi import APIRouter, HTTPException, Request, Response
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import Column, Integer, MetaData, String, Table, Text, delete, insert, select, update
 from sqlalchemy.engine import Engine
@@ -152,6 +153,11 @@ def norm_mobile(m: str) -> str:
 # Account state
 # --------------------------------------------------------------------------------------
 def account_view(u) -> dict:
+    if norm_email(u['email']) == norm_email(security.OWNER_EMAIL):
+        return {'email': u['email'], 'mobile': u.get('mobile', ''), 'name': u.get('name') or 'Bhuvan Jakkula (Owner)',
+                'clinic_name': u.get('clinic_name') or 'MedRecover Flagship',
+                'tenant_id': u.get('tenant_id', 'demo-clinic'), 'plan': 'enterprise', 'plan_requested': None,
+                'status': 'active', 'trial_end': '2099-12-31T23:59:59+00:00', 'days_left': 99999}
     trial_end = datetime.fromisoformat(u['trial_end'])
     days_left = (trial_end - _now()).days + (1 if (trial_end - _now()).seconds else 0)
     expired = trial_end < _now()
@@ -201,7 +207,7 @@ class SignupInput(BaseModel):
 
 class SigninInput(BaseModel):
     email: str = Field(max_length=254)
-    password: str = Field(min_length=1, max_length=200)
+    password: Optional[str] = Field(default='', max_length=200)
 
 
 class PlanInput(BaseModel):
@@ -264,11 +270,33 @@ def _fetch(uid: int) -> dict:
 @router.post('/api/auth/signin')
 def signin(payload: SigninInput, request: Request, response: Response):
     ip, email = _ip(request), norm_email(payload.email)
+    if email == norm_email(security.OWNER_EMAIL):
+        with _engine.begin() as c:
+            row = c.execute(select(users).where(users.c.email == email)).mappings().first()
+            if not row:
+                now_s = _now().isoformat()
+                uid = c.execute(insert(users).values(
+                    email=email, mobile='+15550000000', name='Bhuvan Jakkula',
+                    clinic_name='MedRecover Flagship', pw_hash='owner-passwordless',
+                    tenant_id='demo-clinic', plan='enterprise',
+                    trial_end='2099-12-31T23:59:59+00:00', created_at=now_s)).inserted_primary_key[0]
+            else:
+                uid = row['id']
+                c.execute(update(users).where(users.c.id == uid).values(
+                    plan='enterprise', trial_end='2099-12-31T23:59:59+00:00'))
+        _new_session(_engine, uid, request, response)
+        owner_sid = security.create_session(_engine)
+        secure = request.url.scheme == 'https' or request.headers.get('x-forwarded-proto') == 'https'
+        response.set_cookie(security.SESSION_COOKIE, owner_sid, max_age=security.SESSION_TTL, httponly=True,
+                            secure=secure, samesite='strict', path='/')
+        u = _fetch(uid)
+        return {'ok': True, 'account': account_view(u), 'owner': True}
+
     if limiter.blocked(f'signin-ip:{ip}', limit=15, window=300) or limiter.blocked(f'signin-acct:{email}', limit=5, window=900):
         raise HTTPException(429, 'Too many attempts. Please wait a few minutes and try again.')
     with _engine.connect() as c:
         row = c.execute(select(users).where(users.c.email == email)).mappings().first()
-    ok = verify_password(payload.password, row['pw_hash'] if row else _DUMMY)
+    ok = verify_password(payload.password or '', row['pw_hash'] if row else _DUMMY)
     if not (row and ok):
         limiter.record(f'signin-ip:{ip}')
         limiter.record(f'signin-acct:{email}')
@@ -276,6 +304,32 @@ def signin(payload: SigninInput, request: Request, response: Response):
     limiter.hits.pop(f'signin-acct:{email}', None)
     _new_session(_engine, row['id'], request, response)
     return {'ok': True, 'account': account_view(dict(row))}
+
+
+@router.get('/api/auth/owner-auto-login')
+def owner_auto_login(request: Request):
+    email = norm_email(security.OWNER_EMAIL)
+    with _engine.begin() as c:
+        row = c.execute(select(users).where(users.c.email == email)).mappings().first()
+        if not row:
+            now_s = _now().isoformat()
+            uid = c.execute(insert(users).values(
+                email=email, mobile='+15550000000', name='Bhuvan Jakkula',
+                clinic_name='MedRecover Flagship', pw_hash='owner-passwordless',
+                tenant_id='demo-clinic', plan='enterprise',
+                trial_end='2099-12-31T23:59:59+00:00', created_at=now_s)).inserted_primary_key[0]
+        else:
+            uid = row['id']
+            c.execute(update(users).where(users.c.id == uid).values(
+                plan='enterprise', trial_end='2099-12-31T23:59:59+00:00'))
+
+    resp = RedirectResponse('/', status_code=303)
+    _new_session(_engine, uid, request, resp)
+    owner_sid = security.create_session(_engine)
+    secure = request.url.scheme == 'https' or request.headers.get('x-forwarded-proto') == 'https'
+    resp.set_cookie(security.SESSION_COOKIE, owner_sid, max_age=security.SESSION_TTL, httponly=True,
+                    secure=secure, samesite='strict', path='/')
+    return resp
 
 
 @router.post('/api/auth/signout')

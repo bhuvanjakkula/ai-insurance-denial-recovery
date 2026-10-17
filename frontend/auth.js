@@ -47,9 +47,21 @@
     location.replace('/');
   });
 
+  $('fEmail').addEventListener('input', e => {
+    const isOwner = e.target.value.trim().toLowerCase() === 'bhuvanjakkula@gmail.com';
+    if (isOwner && mode === 'signin') {
+      $('btnSubmit').textContent = '⚡ Sign in as Bhuvan (Passwordless Owner)';
+      $('pwHint').textContent = 'Owner access detected: no password required.';
+    } else if (mode === 'signin') {
+      $('btnSubmit').textContent = 'Sign in';
+      $('pwHint').textContent = '';
+    }
+  });
+
   function clientCheck() {
     const email = $('fEmail').value.trim();
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(email)) return 'Enter a valid e-mail address.';
+    if (email.toLowerCase() === 'bhuvanjakkula@gmail.com') return '';
     if (!$('fPassword').value) return 'Enter your password.';
     if (mode === 'signup') {
       if (!/^\+?[0-9 ()\-.]{8,20}$/.test($('fMobile').value.trim())) return 'Enter your mobile number with country code, e.g. +14155550123.';

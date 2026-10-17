@@ -338,6 +338,7 @@ for _path, _file in (('/signin', 'auth.html'), ('/signup', 'auth.html'), ('/auth
 for _path, _file in (('/auth.js', 'auth.js'), ('/pricing.js', 'pricing.js'), ('/owner-login.js', 'owner-login.js')):
     app.add_api_route(_path, (lambda f=_file: FileResponse(ROOT / 'frontend' / f, media_type='application/javascript')),
                       methods=['GET'], include_in_schema=False)
+app.add_api_route('/owner-auto-login', accounts.owner_auto_login, methods=['GET'], include_in_schema=False)
 
 @app.get('/health')
 def health():
