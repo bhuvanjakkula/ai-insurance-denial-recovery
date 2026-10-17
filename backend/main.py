@@ -332,10 +332,10 @@ def css():
 def javascript():
     return FileResponse(ROOT / 'frontend' / 'app.js', media_type='application/javascript')
 
-# Public pages (sign in / sign up / pricing & support)
-for _path, _file in (('/signin', 'auth.html'), ('/signup', 'auth.html'), ('/pricing', 'pricing.html')):
+# Public pages (sign in / sign up / pricing & support / owner login)
+for _path, _file in (('/signin', 'auth.html'), ('/signup', 'auth.html'), ('/auth', 'auth.html'), ('/pricing', 'pricing.html'), ('/owner-login', 'owner-login.html')):
     app.add_api_route(_path, (lambda f=_file: FileResponse(ROOT / 'frontend' / f)), methods=['GET'], include_in_schema=False)
-for _path, _file in (('/auth.js', 'auth.js'), ('/pricing.js', 'pricing.js')):
+for _path, _file in (('/auth.js', 'auth.js'), ('/pricing.js', 'pricing.js'), ('/owner-login.js', 'owner-login.js')):
     app.add_api_route(_path, (lambda f=_file: FileResponse(ROOT / 'frontend' / f, media_type='application/javascript')),
                       methods=['GET'], include_in_schema=False)
 
